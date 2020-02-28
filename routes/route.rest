@@ -1,0 +1,19 @@
+GET http://localhost:3000/subscribers
+
+###
+
+GET http://localhost:3000/subscribers/5e58d9e55414fb3883945ef7
+
+###
+
+POST http://localhost:3000/subscribers
+Content-Type: application/json
+
+{
+  "name": "bob",
+  "subscribedChannel": "Bennetts Channel",
+  "subscriberPassword": "test"
+}
+### 
+
+DELETE http://localhost:3000/subscribers/5e58d9e55414fb3883945ef7
