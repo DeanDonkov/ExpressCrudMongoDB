@@ -2,18 +2,36 @@ GET http://localhost:3000/subscribers
 
 ###
 
-GET http://localhost:3000/subscribers/5e58d9e55414fb3883945ef7
+GET http://localhost:3000/subscribers/5e5a4ff7defa3a2bcf5999f9
 
 ###
 
-POST http://localhost:3000/subscribers
+POST http://localhost:3000/subscribers/
 Content-Type: application/json
 
 {
-  "name": "bob",
-  "subscribedChannel": "Bennetts Channel",
-  "subscriberPassword": "test"
+  "name": "Bob",
+  "subscribedChannel": "test123",
+  "subscriberPassword": "test",
+  "subscriberEmail":"nezpower@abv.bg"
 }
 ### 
 
-DELETE http://localhost:3000/subscribers/5e58d9e55414fb3883945ef7
+DELETE http://localhost:3000/subscribers/5e5a4ff7defa3a2bcf5999f9
+
+###
+
+POST http://localhost:3000/subscribers/recovery
+Content-Type: application/json
+
+{
+  "id":"5e5a5011defa3a2bcf5999fa"
+}
+
+###
+
+GET http://localhost:3000/subscribers/5e5a7142b4cf664eac772bca/resetpassword
+
+###
+
+GET http://localhost:3000/subscribers/5e5a5011defa3a2bcf5999fa/resetpassword/31baa93fa79ea5530d54f07c4f13816b161136a6

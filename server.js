@@ -3,7 +3,6 @@ require('dotenv').config()
 const express = require('express')
 const app = express()
 const mongoose = require('mongoose')
-const argon = require('argon2');
 
 mongoose.connect(process.env.DATABASE_URL, { useNewUrlParser: true })
 const db = mongoose.connection
@@ -16,3 +15,7 @@ const subscribersRouter = require('./routes/subscribers')
 app.use('/subscribers', subscribersRouter)
 
 app.listen(3000, () => console.log('server started'))
+console.log(express.Router().stack)
+console.log(app._router.stack          // registered routes
+  .filter(r => r.route)    // take out all the middleware
+  .map(r => r.route.path))  // get all the paths

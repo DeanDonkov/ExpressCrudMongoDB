@@ -17,6 +17,10 @@ const subscriberSchema = new mongoose.Schema({
     subscriberPassword: {
       type: String,
       required: true
+    },
+    subscriberEmail: {
+      type: String,
+      required: true
     }
   })
 
