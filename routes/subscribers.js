@@ -1,9 +1,11 @@
 const express = require('express')
 const router = express.Router()
-const argon2 = require('argon2-ffi').argon2i
+var bcrypt = require('bcrypt');
 const crypto = require('crypto')
 const nodemailer = require('nodemailer')
 const Subscriber = require('../models/subscriber')
+const fs = require('fs');
+const jwt = require('jsonwebtoken');
 
 var transporter = nodemailer.createTransport({
   service: 'gmail',
@@ -13,7 +15,22 @@ var transporter = nodemailer.createTransport({
   }
 });
 
-var validtokens = []
+var mailOptions = {
+  from: "expresscrudmongodb@gmail.com",
+  to: "deandonkov@gmail.com",
+  subject: "stuff"
+}
+
+var privateKEY = fs.readFileSync('./private.key', 'utf8');
+var publicKEY = fs.readFileSync('./public.key', 'utf8');
+
+var signOptions = {
+  algorithm:  "RS256"
+ };
+
+ var verifyOptions = {
+  algorithm:  "RS256"
+ };
 
 
 router.get('/', async (req, res) => {
@@ -25,93 +42,83 @@ router.get('/', async (req, res) => {
     }
   })
 
+router.post('/login', async (req, res) => {
+  const data = {
+    "name": req.body.name
+    
+  }
+
+})
+
 // This endpoint gives the user the token, while pushing it to validtokens array.
 router.post('/recovery', getSubscriberByJSON, async (req, res) => {
-  var token = crypto.randomBytes(20).toString('hex');
-  validtokens.push(token)
-  const message = {
-    from: 'testexpressmongodb@gmail.com', // Sender address
-    to: 'donkovdeo@gmail.com',         // List of recipients
-    subject: req.subscriber.name + ' Recovery', // Subject line
-    text: 'click here ' + 'http://localhost:3000/subscribers/' + req.subscriber.id + '/resetpassword/' + token
-};
-transporter.sendMail(message, function(err, info) {
-  if (err) {
-    console.log(err)
-  } else {
-    console.log(info);
-  }
-});
-res.status(201)
-})
+var payload = {
+  id: req.subscriber.id,
+  refresh: new Date().getTime() + 5000
+ };
+ var token = jwt.sign(payload, privateKEY, signOptions);
 
+res.status(201).json({token: token})
+})
+/*
+router.post('/token', (req, res) => {
+  console.log(req.body.refreshToken)
+  console.log(req.body.refreshToken in tokenlist)
+  console.log(tokenlist)
+  if((req.body.refreshToken) && (req.body.refreshToken in tokenlist)){
+    const user = {
+      "id": req.body.id
+    }
+    const token = jwt.sign(user, privateKEY, signOptions)
+    const response = {
+      "token": token
+    }
+    tokenlist[req.body.refreshToken].token = token
+    res.status(200).json(response);
+  } else {
+    res.status(404).send("Invalid request")
+  }
+})
+*/
 // This endpoint resets the user's password with the given token.
-router.get('/:id/resetpassword/:token', getSubscriber, (req, res) => {
-  var token = req.params.token
-  if(validtokens.includes(token)){
-    crypto.randomBytes(32, function(err, salt) { 
-      if(err) throw err; 
-      argon2.hash("newpassword", salt).then(hash => { 
-        try {
-          const subscriber = new Subscriber({
-            name: req.subscriber.name,
-            subscribedChannel: req.subscriber.subscribedChannel,
-            subscriberPassword: hash,
-            subscriberEmail: req.subscriber.subscriberEmail
-          })
-          const newSubscriber = subscriber.save()
-            res.status(201).json(newSubscriber)
-        } catch (err) {
-          res.status(400).json({ message: err.message })
-        }  
-      }); 
-    })
-    removeA(validtokens, token)
-  } else {
-    res.status(404)
-  }
-})
-
-router.get('/:id/resetpassword', getSubscriber, async (req, res) => {
-  crypto.randomBytes(32, function(err, salt) { 
-    if(err) throw err; 
-    argon2.hash("newpassword", salt).then(hash => { 
+router.get('/resetpassword', validateJWT, async (req, res) => {
+  console.log("DSADs")
+  console.log(req.jwt)
+  console.log(req.jwt.id)
+  var subscriber = await Subscriber.findById(req.jwt.id)
+    await bcrypt.hash("newpassword", 12, function(err, hash){
       try {
-        const subscriber = new Subscriber({
-          name: req.subscriber.name,
-          subscribedChannel: req.subscriber.subscribedChannel,
+        const subscriberupdate = new Subscriber({
+          name: subscriber.name,
+          subscribedChannel: subscriber.subscribedChannel,
           subscriberPassword: hash,
-          subscriberEmail: req.subscriber.subscriberEmail
+          subscriberEmail: subscriber.subscriberEmail
         })
-        const newSubscriber = subscriber.save()
-          res.status(201).json(newSubscriber)
+        const newSubscriber = subscriberupdate.save()
+          return res.status(201).json(newSubscriber)
       } catch (err) {
-        res.status(400).json({ message: err.message })
+        return res.status(400).json({ message: err.message })
       }  
-    }); 
-  })
+    })
 })
 
 // Create one subscriber
 router.post('/', async (req, res) => {
-
-  crypto.randomBytes(32, function(err, salt) { 
-    if(err) throw err; 
-    argon2.hash(req.body.subscriberPassword, salt).then(hash => { 
+  bcrypt.hash(req.body.subscriberPassword, 12, function(err, hash){
       try {
         const subscriber = new Subscriber({
           name: req.body.name,
           subscribedChannel: req.body.subscribedChannel,
           subscriberPassword: hash,
+          
           subscriberEmail: req.body.subscriberEmail
         })
         const newSubscriber = subscriber.save()
           res.status(201).json(newSubscriber)
       } catch (err) {
         res.status(400).json({ message: err.message })
-      }  
-    }); 
-  })
+      }   
+    })
   });
 
   // Get one subscriber
@@ -124,19 +131,19 @@ router.get('/:id', getSubscriber, (req, res) => {
 router.patch('/:id', getSubscriber, async (req, res) => {
     const subscriber = req.subscriber
     if (req.body.name != null) {
-      req.subscriber.name = req.body.name
+      subscriber.name = req.body.name
     }
   
     if (req.body.subscribedChannel != null) {
-      req.subscriber.subscribedChannel = req.body.subscribedChannel
+      subscriber.subscribedChannel = req.body.subscribedChannel
     }
 
     if (req.body.subscriberPassword != null) {
-        req.subscriber.subscriberPassword = req.body.subscriberPassword
+        subscriber.subscriberPassword = req.body.subscriberPassword
       }
 
     if(req.body.subscriberEmail != null){
-        req.subscriber.subscriberEmail = req.body.subscriberEmail
+        subscriber.subscriberEmail = req.body.subscriberEmail
     }
     try {
       const updatedSubscriber = await subscriber.save()
@@ -152,7 +159,7 @@ router.patch('/:id', getSubscriber, async (req, res) => {
 router.delete('/:id', getSubscriber, async (req, res) => {
     try {
       await req.subscriber.remove()
-      res.json({ message: 'Deleted This Subscriber' })
+      res.json({ message: 'Deleted This Subscriber'})
     } catch(err) {
       res.status(500).json({ message: err.message})
     }
@@ -189,6 +196,35 @@ async function getSubscriberByJSON(req, res, next) {
   next()
 }
 
+async function validateJWT(req, res, next){
+  var token = req.header('Authorization')
+  try {
+    var legit = jwt.verify(req.header('Authorization'), publicKEY, verifyOptions);
+    console.log(legit)
+    var decode = jwt.decode(token)
+    console.log(decode.id)
+    console.log(legit.refresh = new Date())
+    if(new Date().getTime() > decode.refresh){
+      var sub = await Subscriber.findById(decode.id)
+      if(sub){
+        console.log(sub)
+      const user = {
+        id: decode.id,
+        refresh: new Date().getTime()
+      }
+      decode = user
+      console.log(user)
+      console.log("sad")
+      console.log("dasdas")
+      }
+    }
+    console.log("dsad")
+    console.log(user)
+    req.jwt = decode
+    console.log(req.jwt)
+    return next()
+  } catch(err) {res.status(501).json(JSON.stringify(err))
+}
 // Util
 
 function removeA(arr) {
@@ -203,3 +239,4 @@ function removeA(arr) {
 }
 
 module.exports = router
+}

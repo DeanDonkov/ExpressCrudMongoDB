@@ -2,7 +2,7 @@ GET http://localhost:3000/subscribers
 
 ###
 
-GET http://localhost:3000/subscribers/5e5a4ff7defa3a2bcf5999f9
+GET http://localhost:3000/subscribers/5e5cdcf041ef714037aaec6f
 
 ###
 
@@ -10,10 +10,10 @@ POST http://localhost:3000/subscribers/
 Content-Type: application/json
 
 {
-  "name": "Bob",
-  "subscribedChannel": "test123",
-  "subscriberPassword": "test",
-  "subscriberEmail":"nezpower@abv.bg"
+  "name": "vesko",
+  "subscribedChannel": "test123342",
+  "subscriberPassword": "000",
+  "subscriberEmail":"asd"
 }
 ### 
 
@@ -25,13 +25,20 @@ POST http://localhost:3000/subscribers/recovery
 Content-Type: application/json
 
 {
-  "id":"5e5a5011defa3a2bcf5999fa"
+  "id":"5e5cdcf041ef714037aaec6f"
 }
 
 ###
+POST http://localhost:3000/subscribers/token
+Content-Type: application/json
 
-GET http://localhost:3000/subscribers/5e5a7142b4cf664eac772bca/resetpassword
-
+{
+  "id":"5e5cdcf041ef714037aaec6f",
+  "refreshToken":"eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjVlNWNkY2YwNDFlZjcxNDAzN2FhZWM2ZiIsImlhdCI6MTU4MzMxMTgyMSwiZXhwIjoxNTgzMzExODQxfQ.VY_G9IJpraA_BPmnBQTKWUspDcNVXfe4R1n7OnS54hyH5VSg2V-hktoeMd-x2-k52PiD2E5vvVjl3DwM3Ql6EQ"
+}
+###
+GET http://localhost:3000/subscribers/resetpassword
+Authorization: eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjVlNWNkY2YwNDFlZjcxNDAzN2FhZWM2ZiIsInJlZnJlc2giOjE1ODMzMTgxNDQwMzgsImlhdCI6MTU4MzMxODEzOX0.K418yLLeaxhlyLtfSEra7xF13dSg-SJDLeSQTEfKik-67qM1pPvamx0Nbm-4ADrt6Ho2_AAlVeI6Nkzow4qIWQ
 ###
 
 GET http://localhost:3000/subscribers/5e5a5011defa3a2bcf5999fa/resetpassword/31baa93fa79ea5530d54f07c4f13816b161136a6
