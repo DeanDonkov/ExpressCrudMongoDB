@@ -54,7 +54,7 @@ router.post('/login', async (req, res) => {
 router.post('/recovery', getSubscriberByJSON, async (req, res) => {
 var payload = {
   id: req.subscriber.id,
-  refresh: new Date().getTime() + 5000
+  refresh: new Date().getTime() + 10000
  };
  var token = jwt.sign(payload, privateKEY, signOptions);
 
@@ -82,9 +82,6 @@ router.post('/token', (req, res) => {
 */
 // This endpoint resets the user's password with the given token.
 router.get('/resetpassword', validateJWT, async (req, res) => {
-  console.log("DSADs")
-  console.log(req.jwt)
-  console.log(req.jwt.id)
   var subscriber = await Subscriber.findById(req.jwt.id)
     await bcrypt.hash("newpassword", 12, function(err, hash){
       try {
@@ -92,7 +89,8 @@ router.get('/resetpassword', validateJWT, async (req, res) => {
           name: subscriber.name,
           subscribedChannel: subscriber.subscribedChannel,
           subscriberPassword: hash,
-          subscriberEmail: subscriber.subscriberEmail
+          subscriberEmail: subscriber.subscriberEmail,
+          subscriberBlocked: subscriber.subscriberBlocked
         })
         const newSubscriber = subscriberupdate.save()
           return res.status(201).json(newSubscriber)
@@ -110,7 +108,7 @@ router.post('/', async (req, res) => {
           name: req.body.name,
           subscribedChannel: req.body.subscribedChannel,
           subscriberPassword: hash,
-          
+          subscriberBlocked: req.body.subscriberBlocked,
           subscriberEmail: req.body.subscriberEmail
         })
         const newSubscriber = subscriber.save()
@@ -144,6 +142,9 @@ router.patch('/:id', getSubscriber, async (req, res) => {
 
     if(req.body.subscriberEmail != null){
         subscriber.subscriberEmail = req.body.subscriberEmail
+    }
+    if(req.body.subscriberBlocked != null){
+      subscriber.subscriberBlocked = req.body.subscriberBlocked
     }
     try {
       const updatedSubscriber = await subscriber.save()
@@ -200,31 +201,26 @@ async function validateJWT(req, res, next){
   var token = req.header('Authorization')
   try {
     var legit = jwt.verify(req.header('Authorization'), publicKEY, verifyOptions);
-    console.log(legit)
-    var decode = jwt.decode(token)
-    console.log(decode.id)
-    console.log(legit.refresh = new Date())
-    if(new Date().getTime() > decode.refresh){
-      var sub = await Subscriber.findById(decode.id)
-      if(sub){
-        console.log(sub)
-      const user = {
-        id: decode.id,
-        refresh: new Date().getTime()
+      var decode = jwt.decode(token)
+      if(new Date().getTime() > decode.refresh){
+        var sub = await Subscriber.findById(decode.id)
+        if(sub.subscriberBlocked){
+          res.status(500).json({message: "You're blocked."})
+        }
+        if(sub){
+        const user = {
+          id: decode.id,
+          refresh: new Date().getTime() + 5000
+        }
+        decode = user
+        }
       }
-      decode = user
-      console.log(user)
-      console.log("sad")
-      console.log("dasdas")
-      }
-    }
-    console.log("dsad")
-    console.log(user)
+    
     req.jwt = decode
-    console.log(req.jwt)
     return next()
-  } catch(err) {res.status(501).json(JSON.stringify(err))
-}
+  }
+    catch(err) { return res.status(500).json({message: "Invalid token."}) }
+  
 // Util
 
 function removeA(arr) {

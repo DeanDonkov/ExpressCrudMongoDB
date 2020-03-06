@@ -21,7 +21,12 @@ const subscriberSchema = new mongoose.Schema({
     subscriberEmail: {
       type: String,
       required: true
+    },
+    subscriberBlocked: {
+      type: Boolean,
+      required: true
     }
+    
   })
 
 module.exports = mongoose.model('Subscriber', subscriberSchema)
